@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Grammar Quiz - Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .pulse-ring {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const QuizApp = () => {
+            const [name, setName] = useState('');
+            const [started, setStarted] = useState(false);
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [score, setScore] = useState(0);
+            const [answered, setAnswered] = useState(false);
+            const [selectedAnswer, setSelectedAnswer] = useState(null);
+            const [finished, setFinished] = useState(false);
+            const [timeLeft, setTimeLeft] = useState(20);
+            const [leaderboard, setLeaderboard] = useState([]);
+            const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+            const questions = [
+                // A / AN questions
+                { question: "_____ apple", options: ["A", "An", "The", "Some"], correct: 1, category: "A / An", level: "Beginner" },
+                { question: "_____ book", options: ["A", "An", "The", "Any"], correct: 0, category: "A / An", level: "Beginner" },
+                { question: "_____ elephant", options: ["A", "An", "The", "-"], correct: 1, category: "A / An", level: "Beginner" },
+                { question: "_____ orange", options: ["A", "An", "The", "Some"], correct: 1, category: "A / An", level: "Elementary" },
+                { question: "_____ university", options: ["A", "An", "The", "-"], correct: 0, category: "A / An", level: "Elementary" },
+                
+                // Plurals questions
+                { question: "One cat, two _____", options: ["cat", "cats", "cates", "caties"], correct: 1, category: "Plurals", level: "Beginner" },
+                { question: "One child, two _____", options: ["childs", "childes", "children", "childrens"], correct: 2, category: "Plurals", level: "Elementary" },
+                { question: "One box, three _____", options: ["boxs", "boxes", "boxies", "boxen"], correct: 1, category: "Plurals", level: "Beginner" },
+                { question: "One woman, two _____", options: ["womans", "women", "womens", "woman"], correct: 1, category: "Plurals", level: "Elementary" },
+                { question: "One tooth, many _____", options: ["tooths", "toothes", "teeth", "teeths"], correct: 2, category: "Plurals", level: "Elementary" },
+                
+                // There is / are questions
+                { question: "_____ a dog in the garden.", options: ["There is", "There are", "There have", "There has"], correct: 0, category: "There is / are", level: "Beginner" },
+                { question: "_____ five books on the table.", options: ["There is", "There are", "There have", "There was"], correct: 1, category: "There is / are", level: "Beginner" },
+                { question: "_____ many students in the classroom.", options: ["There is", "There are", "There have", "There has"], correct: 1, category: "There is / are", level: "Elementary" },
+                { question: "_____ a pen in my bag.", options: ["There is", "There are", "There has", "There have"], correct: 0, category: "There is / are", level: "Beginner" },
+                { question: "_____ two cats and one dog.", options: ["There is", "There are", "There has", "There have"], correct: 1, category: "There is / are", level: "Elementary" },
+                
+                // Have / Has questions
+                { question: "I _____ a car.", options: ["have", "has", "am", "is"], correct: 0, category: "Have / Has", level: "Beginner" },
+                { question: "She _____ a bicycle.", options: ["have", "has", "is", "are"], correct: 1, category: "Have / Has", level: "Beginner" },
+                { question: "They _____ many friends.", options: ["have", "has", "is", "are"], correct: 0, category: "Have / Has", level: "Beginner" },
+                { question: "He _____ two brothers.", options: ["have", "has", "is", "are"], correct: 1, category: "Have / Has", level: "Elementary" },
+                { question: "We _____ a big house.", options: ["have", "has", "are", "is"], correct: 0, category: "Have / Has", level: "Beginner" },
+                
+                // To be questions
+                { question: "I _____ a student.", options: ["am", "is", "are", "be"], correct: 0, category: "To be", level: "Beginner" },
+                { question: "She _____ beautiful.", options: ["am", "is", "are", "be"], correct: 1, category: "To be", level: "Beginner" },
+                { question: "They _____ happy.", options: ["am", "is", "are", "be"], correct: 2, category: "To be", level: "Beginner" },
+                { question: "We _____ from Uzbekistan.", options: ["am", "is", "are", "be"], correct: 2, category: "To be", level: "Elementary" },
+                { question: "It _____ a nice day.", options: ["am", "is", "are", "be"], correct: 1, category: "To be", level: "Beginner" },
+                
+                // Can questions
+                { question: "I _____ swim.", options: ["can", "cans", "am can", "is can"], correct: 0, category: "Can", level: "Beginner" },
+                { question: "She _____ speak English.", options: ["can", "cans", "is can", "are can"], correct: 0, category: "Can", level: "Beginner" },
+                { question: "_____ you play football?", options: ["Can", "Cans", "Do can", "Are can"], correct: 0, category: "Can", level: "Elementary" },
+                { question: "He _____ drive a car.", options: ["can", "cans", "is can", "are"], correct: 0, category: "Can", level: "Beginner" },
+                { question: "We _____ cook well.", options: ["can", "cans", "are can", "is can"], correct: 0, category: "Can", level: "Elementary" }
+            ];
+
+            useEffect(() => {
+                if (started && !finished && !answered && timeLeft > 0) {
+                    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+                    return () => clearTimeout(timer);
+                } else if (timeLeft === 0 && !answered) {
+                    handleTimeout();
+                }
+            }, [timeLeft, started, finished, answered]);
+
+            const handleTimeout = () => {
+                setAnswered(true);
+                setTimeout(() => nextQuestion(), 1500);
+            };
+
+            const startQuiz = () => {
+                if (name.trim()) {
+                    setStarted(true);
+                    setTimeLeft(20);
+                }
+            };
+
+            const selectAnswer = (index) => {
+                if (!answered) {
+                    setSelectedAnswer(index);
+                    setAnswered(true);
+                    
+                    if (index === questions[currentQuestion].correct) {
+                        const timeBonus = Math.floor(timeLeft / 4);
+                        setScore(score + 10 + timeBonus);
+                    }
+                    setTimeout(() => nextQuestion(), 1500);
+                }
+            };
+
+            const nextQuestion = () => {
+                if (currentQuestion < questions.length - 1) {
+                    setCurrentQuestion(currentQuestion + 1);
+                    setSelectedAnswer(null);
+                    setAnswered(false);
+                    setTimeLeft(20);
+                } else {
+                    finishQuiz();
+                }
+            };
+
+            const finishQuiz = () => {
+                setFinished(true);
+                const finalScore = score + (selectedAnswer === questions[currentQuestion].correct ? 10 + Math.floor(timeLeft / 4) : 0);
+                const newEntry = {
+                    name: name,
+                    score: finalScore,
+                    time: new Date().toLocaleTimeString(),
+                    date: new Date().toLocaleDateString()
+                };
+                
+                const updatedLeaderboard = [...leaderboard, newEntry].sort((a, b) => b.score - a.score).slice(0, 10);
+                setLeaderboard(updatedLeaderboard);
+            };
+
+            const resetQuiz = () => {
+                setName('');
+                setStarted(false);
+                setCurrentQuestion(0);
+                setScore(0);
+                setAnswered(false);
+                setSelectedAnswer(null);
+                setFinished(false);
+                setTimeLeft(20);
+                setShowLeaderboard(false);
+            };
+
+            const getRankEmoji = (rank) => {
+                if (rank === 0) return '🥇';
+                if (rank === 1) return '🥈';
+                if (rank === 2) return '🥉';
+                return `${rank + 1}`;
+            };
+
+            const getPositionColor = (rank) => {
+                if (rank === 0) return 'from-yellow-400 to-yellow-600';
+                if (rank === 1) return 'from-gray-300 to-gray-500';
+                if (rank === 2) return 'from-orange-400 to-orange-600';
+                return 'from-blue-400 to-blue-600';
+            };
+
+            // Welcome Screen
+            if (!started && !finished) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full fade-in">
+                            <div className="text-center mb-8">
+                                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                    </svg>
+                                </div>
+                                <h1 className="text-4xl font-bold text-gray-800 mb-2">English Grammar Quiz</h1>
+                                <p className="text-gray-600">Test your English skills!</p>
+                            </div>
+
+                            {leaderboard.length > 0 && (
+                                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-6">
+                                    <h3 className="font-semibold text-gray-700 mb-2">🏆 Top 3 O'yinchilar</h3>
+                                    {leaderboard.slice(0, 3).map((player, idx) => (
+                                        <div key={idx} className="flex items-center justify-between py-2">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xl">{getRankEmoji(idx)}</span>
+                                                <span className="font-medium text-gray-700">{player.name}</span>
+                                            </div>
+                                            <span className="text-indigo-600 font-bold">{player.score}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-gray-700 font-medium mb-2">👤 Ismingizni kiriting:</label>
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="Ismingiz..."
+                                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:outline-none"
+                                        onKeyPress={(e) => e.key === 'Enter' && startQuiz()}
+                                    />
+                                </div>
+                                
+                                <button
+                                    onClick={startQuiz}
+                                    disabled={!name.trim()}
+                                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transform hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Boshlash →
+                                </button>
+                            </div>
+
+                            <div className="mt-6 text-center text-sm text-gray-500">
+                                <p>📝 {questions.length} ta savol | ⏱️ 20 soniya har biri</p>
+                                <p className="text-xs mt-2 text-indigo-600 font-semibold">A/An, Plurals, There is/are, Have/Has, To be, Can</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Quiz Screen
+            if (started && !finished) {
+                const question = questions[currentQuestion];
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full fade-in">
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="font-bold text-gray-800">👤 {name}</div>
+                                <div className="text-right">
+                                    <div className="text-sm text-gray-600">Ball</div>
+                                    <div className="text-2xl font-bold text-indigo-600">{score}</div>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <div className="flex justify-between text-sm text-gray-600 mb-2">
+                                    <span>Savol {currentQuestion + 1}/{questions.length}</span>
+                                    <span className="font-semibold text-indigo-600">{question.category}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 h-2 rounded-full transition-all" style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }} />
+                                </div>
+                            </div>
+
+                            <div className={`flex items-center justify-center gap-2 p-3 rounded-xl mb-6 ${timeLeft <= 5 ? 'bg-red-100' : 'bg-indigo-50'}`}>
+                                <span className={`text-2xl font-bold ${timeLeft <= 5 ? 'text-red-600' : 'text-indigo-600'}`}>⏱️ {timeLeft}s</span>
+                            </div>
+
+                            <div className="mb-8">
+                                <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center bg-gradient-to-r from-indigo-100 to-purple-100 p-4 rounded-xl">
+                                    {question.question}
+                                </h2>
+                                
+                                <div className="space-y-3">
+                                    {question.options.map((option, index) => {
+                                        let bgColor = 'bg-gray-50 hover:bg-gray-100 border-gray-200';
+                                        if (answered) {
+                                            if (index === question.correct) bgColor = 'bg-green-100 border-green-500';
+                                            else if (index === selectedAnswer) bgColor = 'bg-red-100 border-red-500';
+                                        }
+
+                                        return (
+                                            <button
+                                                key={index}
+                                                onClick={() => selectAnswer(index)}
+                                                disabled={answered}
+                                                className={`w-full p-5 rounded-xl border-2 ${bgColor} text-left font-semibold text-lg transition-all hover:scale-102 disabled:cursor-not-allowed shadow-sm`}
+                                            >
+                                                <span className="mr-3 text-indigo-600 font-bold text-xl">{String.fromCharCode(65 + index)}.</span>
+                                                {option}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Results Screen
+            if (finished) {
+                const finalScore = score;
+                const userRank = leaderboard.findIndex(p => p.name === name && p.score === finalScore);
+                const percentage = (finalScore / (questions.length * 15)) * 100;
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full fade-in">
+                            <div className="text-center mb-8">
+                                <div className={`bg-gradient-to-r ${getPositionColor(userRank)} w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-4xl font-bold shadow-lg`}>
+                                    {getRankEmoji(userRank)}
+                                </div>
+                                <h1 className="text-4xl font-bold text-gray-800 mb-2">Test Yakunlandi!</h1>
+                                <p className="text-xl text-gray-600">{name}</p>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 mb-6">
+                                <div className="text-center">
+                                    <div className="text-6xl font-bold text-indigo-600 mb-2">{finalScore}</div>
+                                    <div className="text-gray-600">ball ({percentage.toFixed(0)}% to'g'ri)</div>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <h3 className="text-xl font-bold text-gray-800 mb-4 text-center">🏆 Top O'yinchilar</h3>
+                                <div className="space-y-3">
+                                    {leaderboard.slice(0, 5).map((player, idx) => (
+                                        <div key={idx} className={`flex items-center justify-between p-4 rounded-xl ${player.name === name && player.score === finalScore ? 'bg-gradient-to-r from-indigo-100 to-purple-100 border-2 border-indigo-500 scale-105' : 'bg-gray-50'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-2xl font-bold">{getRankEmoji(idx)}</span>
+                                                <div>
+                                                    <div className="font-bold text-gray-800">{player.name}</div>
+                                                    <div className="text-sm text-gray-500">{player.time}</div>
+                                                </div>
+                                            </div>
+                                            <div className="text-2xl font-bold text-indigo-600">{player.score}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button onClick={resetQuiz} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transform hover:scale-105 transition-all">
+                                🔄 Qayta o'ynash
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+        };
+
+        ReactDOM.render(<QuizApp />, document.getElementById('app'));
+    </script>
+</body>
+</html>
